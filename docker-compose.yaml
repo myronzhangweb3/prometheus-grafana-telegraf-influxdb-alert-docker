@@ -1,0 +1,60 @@
+version: "3.5"
+
+services:
+  telegraf:
+    container_name: telegraf
+    image: telegraf:1.28
+    restart: unless-stopped
+    ports:
+      - "9273:9273"
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    user: root
+    entrypoint: "telegraf"
+
+  prometheus:
+    image: prom/prometheus:v2.39.1
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus:/etc/prometheus
+
+  alertmanager:
+    container_name: alertmanager
+    image: prom/alertmanager:v0.26.0
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    command:
+      - --config.file=/etc/alertmanager/config.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./alertmanager:/etc/alertmanager
+
+  alertmanager-lark-adapter:
+    container_name: alertmanager-lark-adapter
+    image: johnxu1989/alertmanager-webhook-feishu:v0.1.11
+    restart: unless-stopped
+    command:
+      - server
+      - --config=/etc/alertmanager/lark-conf.yml
+    volumes:
+      - ./alertmanager:/etc/alertmanager
+
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  grafana-data:

@@ -1,0 +1,43 @@
+groups:
+  - name: alerter
+    rules:
+
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1s
+        labels:
+          docker: container
+        annotations:
+          description: "{{$labels.container_name}}: Instance is Down for 1m"
+
+      - alert: ContainerStopped
+        expr: docker_n_containers_stopped > 0
+        for: 1s
+        labels:
+          docker: container
+        annotations:
+          description: "{{$labels.container_name}}: Container Stopped for 1m"
+
+      - alert: ContainerRestartTooManyTimes
+        expr: increase(docker_container_status_restart_count[1m]) > 1
+        for: 1m
+        labels:
+          docker: container
+        annotations:
+          description: "{{$labels.container_name}}: Container {{$labels.container_name}} restart too many times, now reach {{$value}}"
+
+      - alert: ContainerMemoryUsageTooHigh
+        expr: docker_container_mem_usage_percent > 75
+        for: 1m
+        labels:
+          docker: container
+        annotations:
+          description: "{{$labels.container_name}}: Container memory usage exceeds 75%. (current usage: {{$value}})"
+
+      - alert: ContainerCPUUsageTooHigh
+        expr: docker_container_cpu_usage_percent > 200
+        for: 1m
+        labels:
+          docker: container
+        annotations:
+          description: "{{$labels.container_name}}: Container CPU usage high (current usage: {{$value}})"
