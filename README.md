@@ -18,7 +18,7 @@ The following services are included in this monitoring stack:
 |--------------|------|--------------------------------------------------|
 | **Prometheus** | 9090 | Scrapes and stores metrics, evaluates alert rules. |
 | **Alertmanager**| 9093 | Handles alerts sent by Prometheus.               |
-| **Telegraf**   | -    | Collects container metrics from the Docker daemon. |
+| **Telegraf**   | 9273    | Collects container metrics from the Docker daemon. |
 | **InfluxDB**   | 8086 | Long-term storage for metrics data.              |
 | **Grafana**    | 3000 | For visualizing metrics in dashboards.           |
 
