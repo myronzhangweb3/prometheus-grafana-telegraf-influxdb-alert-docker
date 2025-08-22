@@ -67,5 +67,5 @@ docker-compose down
 To clean all data:
 
 ```bash
-docker volume rm prometheus-monitor_alertmanager_data prometheus-monitor_grafana-data prometheus-monitor_grafana_data prometheus-monitor_influxdb_data prometheus-monitor_prometheus_data
+docker volume rm prometheus-monitor_alertmanager_data prometheus-monitor_grafana_data prometheus-monitor_influxdb_data prometheus-monitor_prometheus_data
 ```
