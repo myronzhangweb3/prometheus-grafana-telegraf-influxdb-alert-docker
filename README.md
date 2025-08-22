@@ -64,7 +64,7 @@ To stop all the services, run:
 docker-compose down
 ```
 
-To clean all data:
+To clean all data, run:
 
 ```bash
 docker volume rm prometheus-monitor_alertmanager_data prometheus-monitor_grafana_data prometheus-monitor_influxdb_data prometheus-monitor_prometheus_data
