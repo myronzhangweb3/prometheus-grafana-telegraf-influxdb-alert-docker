@@ -1,22 +1,49 @@
 groups:
-  - name: alerter
+  - name: docker_alerts
     rules:
+      - alert: HighCpuUsage
+        expr: docker_container_cpu_usage_percent > 80
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container High CPU Usage"
+          description: "Container {{ $labels.container_name }} has high CPU usage ({{ $value | printf `%.2f` }}%)."
+
+      - alert: ContainerAbsent
+        expr: absent(docker_container_cpu_usage_percent{container_name!=""})
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container is down"
+          description: "Container {{ $labels.container_name }} is absent and appears to be down."
+
+      # This alert triggers when the number of running containers changes.
+      # It's a good way to know if something started or stopped unexpectedly.
+      - alert: DockerContainerCountChanged
+        expr: changes(docker_n_containers_running[5m]) > 0
+        labels:
+          severity: info
+        annotations:
+          summary: "Docker container count changed"
+          description: "The number of running Docker containers has changed in the last 5 minutes."
 
       - alert: InstanceDown
         expr: up == 0
-        for: 1s
+        for: 1m
         labels:
           docker: container
         annotations:
-          description: "{{$labels.container_name}}: Instance is Down for 1m"
+          description: "{{$labels.instance}}: Instance is Down for 1m"
 
       - alert: ContainerStopped
         expr: docker_n_containers_stopped > 0
-        for: 1s
+        for: 1m
         labels:
           docker: container
         annotations:
-          description: "{{$labels.container_name}}: Container Stopped for 1m"
+          description: "{{$labels.job}}: Container Stopped for 1m"
 
       - alert: ContainerRestartTooManyTimes
         expr: increase(docker_container_status_restart_count[1m]) > 1
@@ -24,7 +51,7 @@ groups:
         labels:
           docker: container
         annotations:
-          description: "{{$labels.container_name}}: Container {{$labels.container_name}} restart too many times, now reach {{$value}}"
+          description: "{{$labels.job}}: Container {{$labels.container_name}} restart too many times, now reach {{$value}}"
 
       - alert: ContainerMemoryUsageTooHigh
         expr: docker_container_mem_usage_percent > 75
@@ -32,7 +59,7 @@ groups:
         labels:
           docker: container
         annotations:
-          description: "{{$labels.container_name}}: Container memory usage exceeds 75%. (current usage: {{$value}})"
+          description: "{{$labels.job}}: Container memory usage exceeds 75%. (current usage: {{$value}})"
 
       - alert: ContainerCPUUsageTooHigh
         expr: docker_container_cpu_usage_percent > 200
@@ -40,4 +67,4 @@ groups:
         labels:
           docker: container
         annotations:
-          description: "{{$labels.container_name}}: Container CPU usage high (current usage: {{$value}})"
+          description: "{{$labels.job}}: Container CPU usage high (current usage: {{$value}})"

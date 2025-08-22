@@ -10,5 +10,5 @@ route:
 receivers:
   - name: 'feishu-webhook'
     webhook_configs:
-      - url: 'http://alertmanager-lark-adapter:8060/alert'
+      - url: 'http://alertmanager-lark-adapter:8000/hook/webhook'
         send_resolved: true

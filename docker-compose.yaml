@@ -1,60 +1,106 @@
-version: "3.5"
+version: '3.7'
 
 services:
-  telegraf:
-    container_name: telegraf
-    image: telegraf:1.28
-    restart: unless-stopped
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    restart: always
     ports:
-      - "9273:9273"
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=my-user
+      - DOCKER_INFLUXDB_INIT_PASSWORD=my-password
+      - DOCKER_INFLUXDB_INIT_ORG=my-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=my-bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=A9Dfg6IIra98NLkNQtDcAJM2Cuufwg2-LNlNzu71co5Zt97X8WDjILq-STj-DSDDnSaj4nyRAWoHA1i4INDYog==
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - monitor-net
+
+  telegraf:
+    image: telegraf:1.29
+    container_name: telegraf
+    restart: always
+    depends_on:
+      - influxdb
     volumes:
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     user: root
     entrypoint: "telegraf"
+    networks:
+      - monitor-net
 
   prometheus:
-    image: prom/prometheus:v2.39.1
+    image: prom/prometheus:v2.45.0
     container_name: prometheus
-    restart: unless-stopped
+    restart: always
     ports:
       - "9090:9090"
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --web.enable-lifecycle
     volumes:
-      - ./prometheus:/etc/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - monitor-net
+
+  grafana:
+    image: grafana/grafana:9.5.3
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - monitor-net
 
   alertmanager:
-    container_name: alertmanager
     image: prom/alertmanager:v0.26.0
-    restart: unless-stopped
+    container_name: alertmanager
+    restart: always
     ports:
       - "9093:9093"
-    command:
-      - --config.file=/etc/alertmanager/config.yml
-      - --storage.path=/alertmanager
     volumes:
-      - ./alertmanager:/etc/alertmanager
+      - ./alertmanager/config.yml:/etc/alertmanager/config.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - monitor-net
 
   alertmanager-lark-adapter:
     container_name: alertmanager-lark-adapter
     image: johnxu1989/alertmanager-webhook-feishu:v0.1.11
-    restart: unless-stopped
+    restart: always
     command:
       - server
-      - --config=/etc/alertmanager/lark-conf.yml
+      - --config=/etc/alertmanager/webhook-conf.yml
     volumes:
       - ./alertmanager:/etc/alertmanager
+    networks:
+      - monitor-net
 
-  grafana:
-    image: grafana/grafana:10.3.1
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
+networks:
+  monitor-net:
+    driver: bridge
 
 volumes:
-  grafana-data:
+  influxdb_data:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
