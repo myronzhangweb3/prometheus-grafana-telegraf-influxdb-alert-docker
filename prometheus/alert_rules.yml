@@ -3,7 +3,7 @@ groups:
     rules:
       - alert: ContainerDown
         expr: docker_container_status_pid == 0
-        for: 1s
+        for: 1m
         labels:
           severity: critical
         annotations:
